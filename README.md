@@ -13,6 +13,7 @@ A specialized web crawler and scraper for the US Patent and Trademark Office (US
 > - PatentsView API v1 has been deprecated (returns 410 Gone)  
 > - Google Patents API blocks automated requests (503 errors)
 > - Direct USPTO website access requires complex session handling
+> - **NEW**: Selenium WebDriver integration for browser automation (experimental)
 > - The infrastructure is fully functional and ready for integration when APIs become available
 > - Mock data includes realistic patents for AI, blockchain, quantum computing, and more
 
@@ -177,6 +178,50 @@ POST /api/extract/bulk
 
 ## Advanced Features
 
+### Selenium WebDriver Integration (NEW)
+
+The application now includes experimental Selenium WebDriver support for browser automation:
+
+#### Features:
+- **Real Browser Automation**: Uses actual Chrome/Firefox browsers to bypass bot detection
+- **Anti-Detection Measures**: Implements various techniques to avoid detection
+  - Disables automation flags
+  - Randomized delays to mimic human behavior
+  - Natural scrolling patterns
+  - Custom user agent strings
+- **Fallback System**: Automatically falls back to mock data if scraping fails
+- **Headless Mode**: Can run with or without visible browser window
+
+#### Setup:
+```bash
+# Install ChromeDriver
+npm install -g chromedriver
+
+# Enable Selenium in your environment
+export USE_SELENIUM=true
+export SELENIUM_HEADLESS=false  # Set to true for headless mode
+
+# Run the application
+npm run dev
+```
+
+#### Testing Selenium:
+```bash
+# Test Selenium functionality
+npx tsx test-selenium.ts
+
+# Test with API
+USE_SELENIUM=true curl -X POST http://localhost:3001/api/patents/search \
+  -H "Content-Type: application/json" \
+  -d '{"query": "artificial intelligence", "limit": 5}'
+```
+
+#### Current Limitations:
+- USPTO websites have strong anti-bot measures
+- Google Patents blocks automated requests after detection
+- May require proxy rotation for production use
+- Performance is slower than API-based approaches
+
 ### Smart Crawling Strategies
 
 The crawler automatically adapts to different USPTO page types:
@@ -218,6 +263,11 @@ The crawler automatically adapts to different USPTO page types:
 # Server Configuration
 PORT=3001
 LOG_LEVEL=info
+
+# Selenium Configuration (NEW)
+USE_SELENIUM=true              # Enable Selenium-based scraping
+SELENIUM_HEADLESS=false        # Run browser in headless mode
+SELENIUM_BROWSER=chrome        # Browser to use (chrome/firefox)
 
 # Crawl4AI Configuration
 CRAWL4AI_HEADLESS=true

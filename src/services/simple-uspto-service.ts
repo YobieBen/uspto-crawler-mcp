@@ -12,6 +12,7 @@ import axios from 'axios';
 import * as cheerio from 'cheerio';
 import winston from 'winston';
 import https from 'https';
+import { SeleniumUSPTOService } from './selenium-uspto-service.js';
 
 const logger = winston.createLogger({
   level: 'debug',
@@ -54,22 +55,62 @@ export class SimpleUSPTOService {
       rejectUnauthorized: false
     })
   });
+  
+  private seleniumService: SeleniumUSPTOService | null = null;
+  private useSelenium: boolean = false; // Can be enabled via environment variable
+
+  constructor() {
+    // Check if Selenium should be enabled via environment variable
+    this.useSelenium = process.env.USE_SELENIUM === 'true';
+    
+    if (this.useSelenium) {
+      logger.info('Selenium mode enabled');
+      this.seleniumService = new SeleniumUSPTOService({
+        browser: 'chrome',
+        headless: process.env.SELENIUM_HEADLESS !== 'false',
+        antiDetection: true
+      });
+    }
+  }
 
   /**
-   * Search patents using Google Patents API or fallback to mock data
+   * Search patents using multiple methods with fallback
    */
   async searchPatents(query: string, limit: number = 20): Promise<PatentSearchResult[]> {
     logger.info(`Searching patents: ${query}`);
     
-    // First try Google Patents API
+    // First try Selenium if enabled
+    if (this.useSelenium && this.seleniumService) {
+      logger.info('Attempting Selenium-based search...');
+      try {
+        const seleniumResults = await this.seleniumService.searchPatents(query, limit);
+        if (seleniumResults && seleniumResults.length > 0) {
+          logger.info(`Selenium returned ${seleniumResults.length} results`);
+          return seleniumResults;
+        }
+      } catch (error) {
+        logger.error('Selenium search failed:', error);
+      }
+    }
+    
+    // Try Google Patents API
     const googleResults = await this.searchPatentsViaGoogleAPI(query, limit);
     if (googleResults && googleResults.length > 0) {
       return googleResults;
     }
     
-    // If API fails or returns no results, try mock data
+    // If all methods fail, use mock data
     logger.info('Using mock data as fallback');
     return this.getMockPatentResults(query);
+  }
+  
+  /**
+   * Clean up resources
+   */
+  async cleanup(): Promise<void> {
+    if (this.seleniumService) {
+      await this.seleniumService.cleanup();
+    }
   }
 
   /**
