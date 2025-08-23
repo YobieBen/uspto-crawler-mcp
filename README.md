@@ -8,6 +8,14 @@
 
 A specialized web crawler and scraper for the US Patent and Trademark Office (USPTO) website, built with Crawl4AI and MCP (Model Context Protocol) integration. This tool makes it easy to search, extract, and analyze patent and trademark data from the notoriously difficult-to-navigate USPTO databases.  This is work-in-progress and is far from perfect.  It will require some tuning especially on the frontend interface. I would be thrilled if the opensource community will contribute some tweaks to improve the overall app.  Thank you. 
 
+> **Current Status (August 2025)**: 
+> - The application uses enhanced mock data with realistic patent information for demonstration
+> - PatentsView API v1 has been deprecated (returns 410 Gone)  
+> - Google Patents API blocks automated requests (503 errors)
+> - Direct USPTO website access requires complex session handling
+> - The infrastructure is fully functional and ready for integration when APIs become available
+> - Mock data includes realistic patents for AI, blockchain, quantum computing, and more
+
 ## Features
 
 ### 🔍 Smart USPTO Navigation

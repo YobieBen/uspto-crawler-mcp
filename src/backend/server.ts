@@ -14,9 +14,13 @@ import { createServer } from 'http';
 import { Server as SocketServer } from 'socket.io';
 import winston from 'winston';
 import path from 'path';
-import { USPTOCrawler } from '../crawler/uspto-crawler.js';
-import { Crawl4AIService } from '../services/crawl4ai-service.js';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+import { SimpleUSPTOService } from '../services/simple-uspto-service.js';
 import { DatabaseService } from '../services/database-service.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 const logger = winston.createLogger({
   level: 'info',
@@ -39,8 +43,7 @@ export class USPTOBackendServer {
   private app: express.Application;
   private server: any;
   private io: SocketServer;
-  private crawler: USPTOCrawler;
-  private crawl4ai: Crawl4AIService;
+  private usptoService: SimpleUSPTOService;
   private database: DatabaseService;
   private port: number;
 
@@ -57,10 +60,9 @@ export class USPTOBackendServer {
 
     /**
      * Initialize services
-     * Core services for crawling and data management
+     * Core services for USPTO data access
      */
-    this.crawl4ai = new Crawl4AIService();
-    this.crawler = new USPTOCrawler(this.crawl4ai);
+    this.usptoService = new SimpleUSPTOService();
     this.database = new DatabaseService();
 
     this.setupMiddleware();
@@ -108,7 +110,8 @@ export class USPTOBackendServer {
       try {
         logger.info('Patent search request', req.body);
         
-        const results = await this.crawler.searchPatents(req.body);
+        const { query, limit = 20 } = req.body;
+        const results = await this.usptoService.searchPatents(query || '', limit);
         
         // Store search in database for history
         await this.database.saveSearch({
@@ -140,7 +143,8 @@ export class USPTOBackendServer {
       try {
         logger.info('Trademark search request', req.body);
         
-        const results = await this.crawler.searchTrademarks(req.body);
+        const { query, limit = 20 } = req.body;
+        const results = await this.usptoService.searchTrademarks(query || '', limit);
         
         // Store search in database
         await this.database.saveSearch({
@@ -172,7 +176,12 @@ export class USPTOBackendServer {
       try {
         logger.info('Advanced search request', req.body);
         
-        const results = await this.crawler.advancedSearch(req.body);
+        const { query, limit = 20 } = req.body;
+        const [patents, trademarks] = await Promise.all([
+          this.usptoService.searchPatents(query || '', limit),
+          this.usptoService.searchTrademarks(query || '', limit)
+        ]);
+        const results = { patents, trademarks };
         
         res.json({
           success: true,
@@ -195,10 +204,9 @@ export class USPTOBackendServer {
       try {
         const { type, number } = req.params;
         
-        const status = await this.crawler.checkApplicationStatus({
-          applicationNumber: number,
-          type: type as 'patent' | 'trademark'
-        });
+        const status = type === 'patent' 
+          ? await this.usptoService.checkPatentStatus(number)
+          : await this.usptoService.checkTrademarkStatus(number);
 
         res.json({
           success: true,
@@ -393,9 +401,10 @@ export class USPTOBackendServer {
   ): Promise<any> {
     onProgress({ status: 'searching', progress: 25 });
     
-    const results = params.type === 'patent' 
-      ? await this.crawler.searchPatents(params)
-      : await this.crawler.searchTrademarks(params);
+    const { query, limit = 20, type } = params;
+    const results = type === 'patent' 
+      ? await this.usptoService.searchPatents(query || '', limit)
+      : await this.usptoService.searchTrademarks(query || '', limit);
     
     onProgress({ status: 'processing', progress: 75 });
     
@@ -431,7 +440,6 @@ export class USPTOBackendServer {
   async start(): Promise<void> {
     try {
       // Initialize services
-      await this.crawl4ai.initialize();
       await this.database.initialize();
 
       // Start server
@@ -456,7 +464,6 @@ export class USPTOBackendServer {
     this.io.close();
     this.server.close();
     await this.database.close();
-    await this.crawl4ai.cleanup();
     
     logger.info('Server stopped');
   }

@@ -1,0 +1,8 @@
+{
+  "google_patents": true,
+  "bulk_data": false,
+  "patent_search": true,
+  "alternatives": true,
+  "direct_access": true,
+  "commercial": true
+}

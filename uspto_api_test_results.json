@@ -1,0 +1,22 @@
+{
+  "patent_public_search": {
+    "status": "accessible",
+    "endpoint": "https://ppubs.uspto.gov/pubwebapp/",
+    "note": "Web interface accessible, may have hidden APIs"
+  },
+  "bulk_data_portal": {
+    "status": "working",
+    "endpoint": "https://data.uspto.gov/",
+    "note": "Bulk data downloads available"
+  },
+  "google_patents": {
+    "status": "web_accessible",
+    "endpoint": "https://patents.google.com/",
+    "note": "Web scraping possible, no direct API"
+  },
+  "uspto_developer_portal_sync": {
+    "status": "accessible",
+    "endpoint": "https://developer.uspto.gov/",
+    "method": "synchronous"
+  }
+}
