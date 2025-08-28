@@ -14,7 +14,7 @@ A specialized web crawler and scraper for the US Patent and Trademark Office (US
 > - Google Patents API blocks automated requests (503 errors)
 > - Direct USPTO website access requires complex session handling
 > - **NEW**: Selenium WebDriver integration for browser automation (experimental)
-> - The infrastructure is fully functional and ready for integration when APIs become available
+> - The infrastructure is fully functional and ready for integration when APIs become available. In experiments, current APIs expect an "account" and reject scrapes.
 > - Mock data includes realistic patents for AI, blockchain, quantum computing, and more
 
 ## Features
